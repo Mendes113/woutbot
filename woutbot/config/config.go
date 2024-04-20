@@ -4,7 +4,7 @@ package config
 
 
 import (
-	
+
 	"log"
 	"os"
 )
@@ -20,3 +20,25 @@ func GetAPI() string {
 	return api
 }
 
+
+func GetURLDB() string {
+
+
+	url := os.Getenv("URLDB")
+	if url == "" {
+		log.Fatal("URL do banco de dados não encontrada ")
+	}
+
+	return url
+}
+
+
+func GetAPIDB() string {
+
+	api := os.Getenv("APIDB")
+	if api == "" {
+		log.Fatal("Chave da API do banco de dados não encontrada ")
+	}
+
+	return api
+}
