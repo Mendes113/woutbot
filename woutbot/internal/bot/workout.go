@@ -1,11 +1,11 @@
 package bot
 
 import (
+	"encoding/csv"
 	"log"
+	"os"
 	"strconv"
 	"strings"
-
-
 )
 
 // Exercise representa um exercício com sets, repetições e carga
@@ -137,4 +137,34 @@ func MakeTrain(chatID int64, message string) string {
     treino := makeWorkoutFromMessage(message)
     treino.TotalWorkload = calculateTotalWorkload(treino)
     return formatWorkoutDetails(treino)
+}
+
+
+// Função principal para montar o treino e salvar os resultados em um arquivo CSV
+func MakeTrainAndSave(chatID int64, message string) error {
+    log.Print("Montando treino e salvando os resultados")
+    treino := makeWorkoutFromMessage(message)
+    treino.TotalWorkload = calculateTotalWorkload(treino)
+
+    // Criando e abrindo um arquivo CSV para salvar os resultados
+    file, err := os.Create("workload_total_treino.csv")
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+
+    // Criando um escritor CSV
+    writer := csv.NewWriter(file)
+    defer writer.Flush()
+
+    // Escrevendo os cabeçalhos no arquivo CSV
+    writer.Write([]string{"Treino", "Workload Total"})
+
+    for i, exercicio := range treino.Exercises {
+        treinoNum := strconv.Itoa(i + 1) // Número do treino
+        workload := exercicio.Workload(exercicio.Weights[0], exercicio.Reps[0], exercicio.Sets[0]) // Workload do treino
+        writer.Write([]string{treinoNum, strconv.Itoa(workload)})
+    }
+
+    return nil
 }

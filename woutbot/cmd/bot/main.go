@@ -24,4 +24,5 @@ func main() {
 
 	// Configure o webhook passando a instância de BotAPI
 	bot.SetupWebhook(botAPI)
+	
 }

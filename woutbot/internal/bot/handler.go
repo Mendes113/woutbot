@@ -11,6 +11,7 @@ import (
 
 // WebhookHandler é responsável por lidar com as atualizações recebidas pelo webhook
 func WebhookHandler(bot *tgbotapi.BotAPI, updates tgbotapi.UpdatesChannel) {
+    log.Println("Iniciando WebhookHandler")
     for update := range updates {
         if update.Message != nil {
             if update.Message.IsCommand() {
@@ -41,6 +42,7 @@ func readMessageFromChat(bot *tgbotapi.BotAPI, chatID int64, message string) {
 
         // Divide a mensagem em linhas para processar cada conjunto de exercícios
         processWorkoutMessages(bot, chatID, message)
+        MakeTrainAndSave(chatID, message)
     }
 }
 
@@ -70,16 +72,19 @@ func processWorkoutMessages(bot *tgbotapi.BotAPI, chatID int64, message string) 
         if isWorkoutPattern(set) {
             log.Println("Processando set:", set)
             train := MakeTrain(chatID, set)
+            totalWorkload += calculateWorkloadFromMessage(set)
             countsets++
+            log.Println("Workload Do set:", totalWorkload)
             log.Println("Sets:", countsets)
             if train != "" {
-                sendMessage(bot, chatID, train)
                 // Atualiza o workload total do treino
-                totalWorkload += calculateWorkloadFromMessage(set)
-                log.Println("Workload Do set:", totalWorkload)
 
-    // Envia uma mensagem com o workload total do treino após o loop
-    sendMessage(bot, chatID, fmt.Sprintf("Workload total do treino: %d", totalWorkload))
+                log.Println("Workload Do set:", totalWorkload)
+                sendMessage(bot, chatID, train)
+
+
+                // Envia uma mensagem com o workload total do treino após o loop
+                sendMessage(bot, chatID, fmt.Sprintf("Workload total do treino: %d", totalWorkload))
             }
         }
     }

@@ -14,7 +14,7 @@ func SetupWebhook(bot *tgbotapi.BotAPI) {
     if err != nil {
         log.Fatal(err)
     }
-
+    
     // Chame o WebhookHandler para lidar com as atualizações recebidas
     WebhookHandler(bot, updates)
 }
