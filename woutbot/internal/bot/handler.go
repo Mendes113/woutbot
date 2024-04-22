@@ -1,9 +1,10 @@
 package bot
 
 import (
+	"fmt"
 	"log"
 	"regexp"
-	"strings"
+
 
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -31,43 +32,79 @@ func readMessageFromChat(bot *tgbotapi.BotAPI, chatID int64, message string) {
     log.Println("Mensagem recebida:", message)
 
     // Replica a mensagem que o usuário mandou
+    echoMessage(bot, chatID, message)
+
+    // Verifica se a mensagem contém padrões de treino
+    if isWorkoutPattern(message) {
+        log.Println("Padrão de treino encontrado")
+        sendMessage(bot, chatID, "Padrão de treino encontrado")
+
+        // Divide a mensagem em linhas para processar cada conjunto de exercícios
+        processWorkoutMessages(bot, chatID, message)
+    }
+}
+
+func echoMessage(bot *tgbotapi.BotAPI, chatID int64, message string) {
     msg := tgbotapi.NewMessage(chatID, message)
     _, err := bot.Send(msg)
     if err != nil {
         log.Println("Erro ao enviar mensagem:", err)
     }
+}
 
-    // Verifica se a mensagem contém padrões de treino
-    if isWorkoutPattern(message) {
-        log.Print("Padrão de treino encontrado")
-        msg := tgbotapi.NewMessage(chatID, "Padrão de treino encontrado")
-        _, err := bot.Send(msg)
-        if err != nil {
-            log.Println("Erro ao enviar mensagem:", err)
-        }
+func sendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
+    msg := tgbotapi.NewMessage(chatID, text)
+    _, err := bot.Send(msg)
+    if err != nil {
+        log.Println("Erro ao enviar mensagem:", err)
+    }
+}
 
-        // Divide a mensagem em linhas para processar cada conjunto de exercícios
-        lines := strings.Split(message, "\n")
-        for _, line := range lines {
-            if isWorkoutPattern(line) {
-                train := MakeTrain(chatID, line)
-                if train != "" {
-                    msg := tgbotapi.NewMessage(chatID, train)
-                    _, err := bot.Send(msg)
-                    if err != nil {
-                        log.Println("Erro ao enviar mensagem:", err)
-                    }
-                }
+func processWorkoutMessages(bot *tgbotapi.BotAPI, chatID int64, message string) {
+    setsRegex := regexp.MustCompile(`\n{1,}`) // Expressão regular para duas ou mais quebras de linha
+    sets := setsRegex.Split(message, -1) // Dividir a mensagem em conjuntos de treino
+
+    var totalWorkload int // Variável para armazenar o workload total do treino
+    countsets := 0
+    for _, set := range sets {
+        if isWorkoutPattern(set) {
+            log.Println("Processando set:", set)
+            train := MakeTrain(chatID, set)
+            countsets++
+            log.Println("Sets:", countsets)
+            if train != "" {
+                sendMessage(bot, chatID, train)
+                // Atualiza o workload total do treino
+                totalWorkload += calculateWorkloadFromMessage(set)
+                log.Println("Workload Do set:", totalWorkload)
+
+    // Envia uma mensagem com o workload total do treino após o loop
+    sendMessage(bot, chatID, fmt.Sprintf("Workload total do treino: %d", totalWorkload))
             }
         }
     }
+
 }
+
+
+
+// Calcula o workload total a partir de uma mensagem de treino
+func calculateWorkloadFromMessage(message string) int {
+    treino := makeWorkoutFromMessage(message)
+    return calculateTotalWorkload(treino)
+}
+
+
+
+
 
 // Função para verificar se uma linha contém um padrão de treino
 func isWorkoutPattern(line string) bool {
     // Padrão é opcionalmente nome_do_exercicio seguido por número_de_série número_de_repetições peso
     // Exemplo: triceps 1 10 10
     isWorkout := regexp.MustCompile(`(?:[a-zA-Z]+\s+)?\d+\s+\d+\s+\d+`)
+    // next line
+
     return isWorkout.MatchString(line)
 }
 
