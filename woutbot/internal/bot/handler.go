@@ -42,7 +42,8 @@ func readMessageFromChat(bot *tgbotapi.BotAPI, chatID int64, message string) {
 
         // Divide a mensagem em linhas para processar cada conjunto de exercícios
         processWorkoutMessages(bot, chatID, message)
-        MakeTrainAndSave(chatID, message)
+        saveTrainToCsv("treino.csv", message)
+
     }
 }
 

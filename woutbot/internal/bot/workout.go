@@ -140,31 +140,44 @@ func MakeTrain(chatID int64, message string) string {
 }
 
 
-// Função principal para montar o treino e salvar os resultados em um arquivo CSV
-func MakeTrainAndSave(chatID int64, message string) error {
-    log.Print("Montando treino e salvando os resultados")
+
+
+func saveTrainToCsv(filename, message string) error {
+    log.Print("Salvando treino em um arquivo CSV")
     treino := makeWorkoutFromMessage(message)
     treino.TotalWorkload = calculateTotalWorkload(treino)
 
-    // Criando e abrindo um arquivo CSV para salvar os resultados
-    file, err := os.Create("workload_total_treino.csv")
+    file, err := os.Create(filename)
     if err != nil {
         return err
     }
     defer file.Close()
 
-    // Criando um escritor CSV
     writer := csv.NewWriter(file)
     defer writer.Flush()
 
-    // Escrevendo os cabeçalhos no arquivo CSV
-    writer.Write([]string{"Treino", "Workload Total"})
-
-    for i, exercicio := range treino.Exercises {
-        treinoNum := strconv.Itoa(i + 1) // Número do treino
-        workload := exercicio.Workload(exercicio.Weights[0], exercicio.Reps[0], exercicio.Sets[0]) // Workload do treino
-        writer.Write([]string{treinoNum, strconv.Itoa(workload)})
+    // Escreve cabeçalho
+    headers := []string{"Exercício", "Conjuntos", "Repetições", "Carga", "Carga Total"}
+    if err := writer.Write(headers); err != nil {
+        return err
     }
 
+    // Escreve os detalhes de cada exercício
+    for _, exercicio := range treino.Exercises {
+        for i := 0; i < len(exercicio.Sets); i++ {
+            record := []string{
+                exercicio.Name,
+                strconv.Itoa(exercicio.Sets[i]),
+                strconv.Itoa(exercicio.Reps[i]),
+                strconv.Itoa(exercicio.Weights[i]),
+                strconv.Itoa(exercicio.Workload(exercicio.Weights[i], exercicio.Reps[i], exercicio.Sets[i])),
+            }
+            if err := writer.Write(record); err != nil {
+                return err
+            }
+        }
+    }
+
+    log.Printf("Treino salvo em %s", filename)
     return nil
 }
