@@ -6,7 +6,18 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
+
+
+
+type Workout struct {
+    Exercises []*Exercise
+    Date     string
+    TotalWorkload int
+    Obs      string
+}
+
 
 // Exercise representa um exercício com sets, repetições e carga
 type Exercise struct {
@@ -60,10 +71,6 @@ func (e *Exercise) GetExerciseDetails() string {
 }
 
 // Workout representa um treino composto por uma lista de exercícios
-type Workout struct {
-    Exercises []*Exercise
-    TotalWorkload int
-}
 
 // NewWorkout cria um novo treino vazio
 func NewWorkout() *Workout {
@@ -82,7 +89,7 @@ func (w *Workout) AddExercise(exercise *Exercise) {
 func makeWorkoutFromMessage(message string) *Workout {
     lines := strings.Split(message, "\n")
     treino := NewWorkout()
-
+     treino.Date = GetCurrentDate()
     for _, line := range lines {
         parts := strings.Fields(line)
         if len(parts) < 4 {
@@ -100,10 +107,17 @@ func makeWorkoutFromMessage(message string) *Workout {
     return treino
 }
 
+
+func GetCurrentDate() string {
+    date := time.Now()
+    return date.Format("02/01/2006")
+
+}
 // Adiciona um exercício ao treino
 func addExerciseToWorkout(treino *Workout, name string, sets, reps, weight int) {
     exercicio := NewExercise(name)
     for i := 0; i < sets; i++ {
+        
         exercicio.AddSet(sets)
         exercicio.AddRep(reps)
         exercicio.AddWeight(weight)
@@ -146,6 +160,7 @@ func saveTrainToCsv(filename, message string) error {
     log.Print("Salvando treino em um arquivo CSV")
     treino := makeWorkoutFromMessage(message)
     treino.TotalWorkload = calculateTotalWorkload(treino)
+    treino.Date = GetCurrentDate()
 
     file, err := os.Create(filename)
     if err != nil {
@@ -157,7 +172,7 @@ func saveTrainToCsv(filename, message string) error {
     defer writer.Flush()
 
     // Escreve cabeçalho
-    headers := []string{"Exercício", "Conjuntos", "Repetições", "Carga", "Carga Total"}
+    headers := []string{"Data", "Exercício",  "Conjuntos", "Repetições", "Carga", "Carga Total"}
     if err := writer.Write(headers); err != nil {
         return err
     }
@@ -167,6 +182,7 @@ func saveTrainToCsv(filename, message string) error {
         for i := 0; i < len(exercicio.Sets); i++ {
             record := []string{
                 exercicio.Name,
+                treino.Date,
                 strconv.Itoa(exercicio.Sets[i]),
                 strconv.Itoa(exercicio.Reps[i]),
                 strconv.Itoa(exercicio.Weights[i]),
