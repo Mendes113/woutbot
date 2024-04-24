@@ -181,8 +181,8 @@ func saveTrainToCsv(filename, message string) error {
     for _, exercicio := range treino.Exercises {
         for i := 0; i < len(exercicio.Sets); i++ {
             record := []string{
-                exercicio.Name,
                 treino.Date,
+                exercicio.Name,
                 strconv.Itoa(exercicio.Sets[i]),
                 strconv.Itoa(exercicio.Reps[i]),
                 strconv.Itoa(exercicio.Weights[i]),
